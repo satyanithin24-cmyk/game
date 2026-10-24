@@ -141,6 +141,7 @@ public final class TicTacToeApp extends JFrame {
         });
 
         gameMenu.add(localItem);
+        gameMenu.add(localTwoPlayerItem);
         gameMenu.add(hostItem);
         gameMenu.add(joinItem);
         gameMenu.add(new JSeparator());
@@ -204,12 +205,14 @@ public final class TicTacToeApp extends JFrame {
         addLabeledField(fields, fgbc, 0, "Host IP", hostField);
         addLabeledField(fields, fgbc, 1, "Port", portField);
 
-        JPanel buttons = new JPanel(new GridLayout(1, 2, 8, 0));
+        JPanel buttons = new JPanel(new GridLayout(1, 3, 8, 0));
         buttons.setOpaque(false);
         buttons.add(offlineButton);
+        buttons.add(localTwoPlayerButton);
         buttons.add(onlineButton);
 
         offlineButton.addActionListener(event -> startOfflineGame());
+        localTwoPlayerButton.addActionListener(event -> startLocalTwoPlayerGame());
         onlineButton.addActionListener(event -> showOnlineOptions());
 
         gbc.gridx = 1;
@@ -315,6 +318,7 @@ public final class TicTacToeApp extends JFrame {
         closeSession();
         onlineMode = false;
         computerMode = true;
+        localTwoPlayerMode = false;
         computerThinking = false;
         connected = false;
         localMark = chosenMark;
@@ -325,6 +329,20 @@ public final class TicTacToeApp extends JFrame {
         if (currentTurn == remoteMark) {
             scheduleComputerMove();
         }
+    }
+
+    private void startLocalTwoPlayerGame() {
+        closeSession();
+        onlineMode = false;
+        computerMode = false;
+        localTwoPlayerMode = true;
+        computerThinking = false;
+        connected = false;
+        localMark = 'X';
+        remoteMark = 'O';
+        resetBoard("Local 2-player game started. Player X goes first.");
+        roleLabel.setText("Mode: local 2-player");
+        updateControls();
     }
 
     private void showOnlineOptions() {
@@ -355,6 +373,7 @@ public final class TicTacToeApp extends JFrame {
         closeSession();
         onlineMode = true;
         computerMode = false;
+        localTwoPlayerMode = false;
         computerThinking = false;
         connected = false;
         localMark = 'X';
@@ -388,6 +407,7 @@ public final class TicTacToeApp extends JFrame {
         closeSession();
         onlineMode = true;
         computerMode = false;
+        localTwoPlayerMode = false;
         computerThinking = false;
         connected = false;
         localMark = 'O';
@@ -444,7 +464,7 @@ public final class TicTacToeApp extends JFrame {
                 setStatus("Wait for the computer's move.");
                 return;
             }
-        } else {
+        } else if (!localTwoPlayerMode) {
             setStatus("Choose Offline or Online to start.");
             return;
         }
@@ -538,7 +558,9 @@ public final class TicTacToeApp extends JFrame {
             }
             return;
         }
-        resetBoard(onlineMode ? "Game restarted. X goes first." : "Choose Offline or Online to start.");
+        resetBoard(onlineMode
+                ? "Game restarted. X goes first."
+                : localTwoPlayerMode ? "Game restarted. Player X goes first." : "Choose Offline or Online to start.");
     }
 
     private void resetBoard(String status) {
@@ -742,6 +764,10 @@ public final class TicTacToeApp extends JFrame {
             setStatus(currentTurn == localMark ? "Your turn (" + localMark + ")." : "Computer's turn (" + remoteMark + ").");
             return;
         }
+        if (localTwoPlayerMode) {
+            setStatus("Player " + currentTurn + "'s turn.");
+            return;
+        }
         if (!connected) {
             setStatus(onlineMode ? "Waiting for another player to join..." : "Choose Offline or Online to start.");
             return;
@@ -802,6 +828,7 @@ public final class TicTacToeApp extends JFrame {
         closeSession();
         onlineMode = false;
         computerMode = false;
+        localTwoPlayerMode = false;
         computerThinking = false;
         connected = false;
         roleLabel.setText("Mode: disconnected");
@@ -813,6 +840,7 @@ public final class TicTacToeApp extends JFrame {
         connected = false;
         onlineMode = false;
         computerMode = false;
+        localTwoPlayerMode = false;
         computerThinking = false;
         roleLabel.setText("Mode: disconnected");
         setStatus(reason == null || reason.isBlank() ? "Disconnected." : reason);
@@ -833,6 +861,8 @@ public final class TicTacToeApp extends JFrame {
             canMove = connected && currentTurn == localMark;
         } else if (computerMode) {
             canMove = currentTurn == localMark && !computerThinking;
+        } else if (localTwoPlayerMode) {
+            canMove = true;
         }
 
         for (int i = 0; i < cells.length; i++) {
@@ -845,7 +875,7 @@ public final class TicTacToeApp extends JFrame {
         portField.setEnabled(!onlineMode || !connected);
         offlineButton.setEnabled(true);
         onlineButton.setEnabled(!onlineMode || !connected);
-        restartButton.setEnabled(computerMode || (onlineMode && connected));
+        restartButton.setEnabled(computerMode || localTwoPlayerMode || (onlineMode && connected));
         disconnectButton.setEnabled(onlineMode || connected);
     }
 
