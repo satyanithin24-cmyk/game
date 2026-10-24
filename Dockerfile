@@ -6,5 +6,5 @@ RUN apt-get update && apt-get install \
      && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/game
 RUN mvn install
-RUN mv target/game-1.0-SNAPSHOT.jar game.jar
+RUN mv target/*.jar game.jar
 CMD ["java", "-jar", "game.jar"]
